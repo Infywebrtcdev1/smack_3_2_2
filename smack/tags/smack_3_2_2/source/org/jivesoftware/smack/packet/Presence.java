@@ -21,6 +21,7 @@
 package org.jivesoftware.smack.packet;
 
 import org.jivesoftware.smack.util.StringUtils;
+import org.jivesoftware.smackx.packet.MiscExtension;
 
 /**
  * Represents XMPP presence packets. Every presence packet has a type, which is one of
@@ -64,6 +65,8 @@ public class Presence extends Packet {
     private Mode mode = null;
     private String language;
 
+    private MiscExtension misc;
+
     /**
      * Creates a new presence update. Status, priority, and mode are left un-set.
      *
@@ -101,6 +104,10 @@ public class Presence extends Packet {
      */
     public boolean isAvailable() {
         return type == Type.available;    
+    }
+
+    public void addMisc(MiscExtension misc) {
+        this.misc = misc;
     }
 
     /**
@@ -261,6 +268,9 @@ public class Presence extends Packet {
         XMPPError error = getError();
         if (error != null) {
             buf.append(error.toXML());
+        }
+        if (misc != null) {
+            buf.append(misc.toXML());
         }
 
         buf.append("</presence>");

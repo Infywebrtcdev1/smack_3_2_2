@@ -64,6 +64,7 @@ import org.jivesoftware.smackx.packet.MUCAdmin;
 import org.jivesoftware.smackx.packet.MUCInitialPresence;
 import org.jivesoftware.smackx.packet.MUCOwner;
 import org.jivesoftware.smackx.packet.MUCUser;
+import org.jivesoftware.smackx.packet.MiscExtension;
 
 /**
  * A MultiUserChat is a conversation that takes place among many users in a virtual
@@ -318,7 +319,7 @@ public class MultiUserChat {
      *          (e.g. room already exists; user already joined to an existant room or
      *          405 error if the user is not allowed to create the room)
      */
-    public synchronized void create(String nickname) throws XMPPException {
+    public synchronized void create(String nickname, Map<String, String> miscParams) throws XMPPException {
         if (nickname == null || nickname.equals("")) {
             throw new IllegalArgumentException("Nickname must not be null or blank.");
         }
@@ -331,6 +332,25 @@ public class MultiUserChat {
         // and signal support for MUC. The owner will be automatically logged into the room.
         Presence joinPresence = new Presence(Presence.Type.available);
         joinPresence.setTo(room + "/" + nickname);
+
+        MiscExtension misc = new MiscExtension();
+        String event = miscParams.get("event");
+        String traceId = miscParams.get("traceid");
+        String nodeId = miscParams.get("nodeid");
+        String cNodeId = miscParams.get("cnodeid");
+        String uNodeId = miscParams.get("unodeid");
+
+        if(event != null && !event.equals(""))
+            misc.setEvent(event);
+        if(traceId != null && !traceId.equals(""))
+            misc.setTraceId(traceId);
+        if(nodeId != null && !nodeId.equals(""))
+            misc.setNodeId(nodeId);
+        if(cNodeId != null && !cNodeId.equals(""))
+            misc.setCNodeId(cNodeId);
+        if(uNodeId != null && !uNodeId.equals(""))
+            misc.setUNodeId(uNodeId);
+
         // Indicate the the client supports MUC
         joinPresence.addExtension(new MUCInitialPresence());
         // Invoke presence interceptors so that extra information can be dynamically added
@@ -344,6 +364,9 @@ public class MultiUserChat {
                 new FromMatchesFilter(room + "/" + nickname),
                 new PacketTypeFilter(Presence.class));
         PacketCollector response = connection.createPacketCollector(responseFilter);
+
+        joinPresence.addMisc(misc);
+
         // Send create & join packet.
         connection.sendPacket(joinPresence);
         // Wait up to a certain number of seconds for a reply.
